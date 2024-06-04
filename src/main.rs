@@ -1,6 +1,8 @@
 use std::{env, fs, process::exit};
 
-// the internam memory
+const CELL_SIZE: u8 = 8;
+
+// the internal memory
 struct Memory {
     bytearray: [u8; 30000],
     idx: usize,
@@ -51,15 +53,19 @@ impl Memory {
 
     // increment the value at pointer
     fn increment(&mut self) {
-        self.bytearray[self.idx] = (self.bytearray[self.idx] + 1) % 255;
+        if self.bytearray[self.idx] >= CELL_SIZE {
+            self.bytearray[self.idx] = 0;
+        } else {
+            self.bytearray[self.idx] += 1;
+        }
     }
 
     // decrement the value at pointer
     fn decrement(&mut self) {
         if self.bytearray[self.idx] == 0 {
-            self.bytearray[self.idx] = 255;
+            self.bytearray[self.idx] = CELL_SIZE;
         } else {
-            self.bytearray[self.idx] = self.bytearray[self.idx] - 1;
+            self.bytearray[self.idx] -= 1;
         }
     }
 
@@ -165,7 +171,7 @@ impl InnerState {
         idx2
     }
 
-    // actually run the program
+    // actually interpret the program
     fn execute(&mut self) {
         let idx2 = self.idx;
         let oper = &self.operations[idx2];
@@ -177,14 +183,11 @@ impl InnerState {
             Operations::MoveRight => self.memory.move_right(),
             Operations::Input => {
                 if self.input_idx >= self.input_str.len() {
-                    self.memory.accept_in(0 as u8);
+                    self.memory.accept_in(0 as u8); // zero-terminate
                 } else {
                     self.memory.accept_in(self.input_str[self.input_idx] as u8);
                 }
                 self.input_idx += 1;
-                //     let mut x: [u8; 1] = [0];
-                //     io::stdin().read_exact(&mut x).expect("");
-                //     self.memory.accept_in(x[0]);
             }
             Operations::Output => print!("{}", self.memory.give_out() as char),
             Operations::BracketLeft => {
@@ -194,7 +197,7 @@ impl InnerState {
                 }
             }
             Operations::BracketRight => {
-                // if zero, then move on
+                // if nonzero, then jump back
                 if self.memory.get_value() != 0 {
                     self.idx = self.get_prev_lbrack();
                 }
