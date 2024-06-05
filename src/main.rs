@@ -1,10 +1,11 @@
 use std::{env, fs, process::exit};
 
-const CELL_SIZE: u8 = 8;
+const CELL_SIZE_LIMIT: u32 = 255;
+const ARRAY_SIZE_LIMIT: usize = 30000;
 
 // the internal memory
 struct Memory {
-    bytearray: [u8; 30000],
+    bytearray: [u32; ARRAY_SIZE_LIMIT],
     idx: usize,
 }
 
@@ -12,7 +13,7 @@ impl Memory {
     // create a new array
     fn new() -> Memory {
         let array = Memory {
-            bytearray: [0; 30000],
+            bytearray: [0; ARRAY_SIZE_LIMIT],
             idx: 0,
         };
         array
@@ -20,7 +21,7 @@ impl Memory {
 
     // keep the index within range
     fn keep_range(&mut self) {
-        if self.idx >= 30000 {
+        if self.idx >= ARRAY_SIZE_LIMIT {
             self.idx = 0;
         }
     }
@@ -28,7 +29,7 @@ impl Memory {
     // move the array pointer left one byte, and wraps around
     fn move_left(&mut self) {
         if self.idx == 0 {
-            self.idx = 29999;
+            self.idx = ARRAY_SIZE_LIMIT - 1;
         } else {
             self.idx -= 1;
         }
@@ -43,17 +44,17 @@ impl Memory {
 
     // accept one character of input
     fn accept_in(&mut self, chr: u8) {
-        self.bytearray[self.idx] = chr;
+        self.bytearray[self.idx] = chr as u32;
     }
 
     // provide the value at the array pointer
-    fn give_out(&mut self) -> u8 {
+    fn give_out(&mut self) -> u32 {
         self.bytearray[self.idx]
     }
 
     // increment the value at pointer
     fn increment(&mut self) {
-        if self.bytearray[self.idx] >= CELL_SIZE {
+        if self.bytearray[self.idx] >= CELL_SIZE_LIMIT {
             self.bytearray[self.idx] = 0;
         } else {
             self.bytearray[self.idx] += 1;
@@ -63,14 +64,14 @@ impl Memory {
     // decrement the value at pointer
     fn decrement(&mut self) {
         if self.bytearray[self.idx] == 0 {
-            self.bytearray[self.idx] = CELL_SIZE;
+            self.bytearray[self.idx] = CELL_SIZE_LIMIT;
         } else {
             self.bytearray[self.idx] -= 1;
         }
     }
 
     // get the current value at pointer
-    fn get_value(&mut self) -> u8 {
+    fn get_value(&mut self) -> u32 {
         self.bytearray[self.idx]
     }
 }
@@ -189,7 +190,7 @@ impl InnerState {
                 }
                 self.input_idx += 1;
             }
-            Operations::Output => print!("{}", self.memory.give_out() as char),
+            Operations::Output => print!("{}", self.memory.give_out() as u8 as char),
             Operations::BracketLeft => {
                 // if zero, then directly skip the block between `[` and `]`
                 if self.memory.get_value() == 0 {
