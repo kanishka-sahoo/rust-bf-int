@@ -211,15 +211,26 @@ impl InnerState {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() != 3 {
-        println!("Usage: {} [filename] [input string]", args[0]);
+    if args.len() != 2 {
+        println!("Usage: {} [filename]", args[0]);
         exit(1);
     }
     let contents = fs::read_to_string(&args[1]).expect("Unable to read file!");
-    let contents: Vec<char> = contents.trim().chars().collect();
+    let mut parsed = contents.trim().split("!").collect::<Vec<&str>>();
 
-    let mut state = InnerState::new(contents.clone(), args[2].to_string());
-    while state.idx < contents.len() {
+    if parsed.len() < 2 {
+        parsed.push("");
+    }
+    if parsed.len() > 2 {
+        println!("Please use only one `!` in the input file!");
+        exit(1);
+    }
+
+    let mut state = InnerState::new(
+        parsed[0].to_string().chars().collect(),
+        parsed[1].to_string(),
+    );
+    while state.idx < parsed[0].len() {
         state.execute();
     }
     println!("");
